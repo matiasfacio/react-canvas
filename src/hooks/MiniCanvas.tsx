@@ -5,6 +5,7 @@ export function MiniCanvas({sketch}: {sketch: Coordinate[]}) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [isFirstRender, setIsFirstRender] = useState(true)
 
+    // all magic numbers for now
     const draw = useCallback((ctx: CanvasRenderingContext2D, { x, y, strokeColor, strokeSize }: Coordinate) => {
             ctx.lineTo(x * 0.05, y * 0.05);
             ctx.lineWidth = strokeSize * 0.5;

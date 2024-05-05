@@ -3,7 +3,7 @@ import { useCanvasResize } from "../hooks/useWindowResize"
 import { useStrokeSize } from "../hooks/useStrokeSize"
 import styled from "styled-components"
 import { useCanvasConfig } from "../hooks/useCanvasConfig"
-import { MiniCanvas } from "../hooks/useCanvas"
+import { MiniCanvas } from "../hooks/MiniCanvas"
 
 export type Coordinate = {
     x: number;
