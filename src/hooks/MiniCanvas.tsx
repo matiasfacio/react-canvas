@@ -33,5 +33,5 @@ export function MiniCanvas({ sketch, onClick }: { sketch: Coordinate[];  onClick
             startDraw()
     }, [isFirstRender, startDraw])
 
-    return <canvas width={100} height={50} ref={canvasRef} style={{ border: '1px black solid' }} onClick={onClick} />
+    return <canvas width={100} height={50} ref={canvasRef} style={{ border: '1px darkgray solid' }} onClick={onClick} />
 }

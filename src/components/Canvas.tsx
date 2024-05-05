@@ -155,7 +155,7 @@ const StyledMiniCanvasContainer = styled.div`
     display: flex;
     flex-direction: column;
     gap: 12px;
-    min-width: 100px;
+    min-width: 120px;
     max-height: 80vh;
     overflow-y: auto;
 `
