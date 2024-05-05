@@ -66,10 +66,14 @@ export const Canvas = () => {
         if (canvasRef.current === null) return
         const c = canvasRef.current.getContext('2d')
         if (!c) return;
-        for (const sketch of [...handFreePathCache, handFreePath]) {
+        for (const sketch of handFreePathCache) {
             drawMainSingle(c, sketch)
         }
-    }, [drawMainSingle, handFreePath, handFreePathCache])
+    }, [drawMainSingle, handFreePathCache])
+
+    useEffect(()=> {
+        drawMainComplete()
+    }, [drawMainComplete, handFreePathCache])
 
     const handleClickOnDraft = useCallback((e: MouseEvent) => {
         // we check if it is the first click - the one that initialize drawing
@@ -117,36 +121,63 @@ export const Canvas = () => {
         return ()=> window.removeEventListener('keydown', handleCancel)
     }, [])
 
+    const handleMiniCanvasClick = (x: number, y: number) => {
+        const copy = handFreePathCache.filter((t) => t[0].x !== x && t[0].y !== y )
+        setHandFreePathCache(copy)
+    }
 
-
-    return <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
-        <div style={{display: 'flex', gap: 10}}>
-            <div style={{display: 'flex', flexDirection: 'column', gap: 10, minWidth: 100, maxHeight: '80vh', overflowY:"auto"}}>
-            {handFreePathCache.map((sketch, index) => <MiniCanvas key={index} sketch={sketch} />)}
-            </div>
+    return <StyledContainer>
+        <StyledCanvasAndMiniCanvasContainer>
+            <StyledMiniCanvasContainer>
+                {
+                    handFreePathCache.map((sketch) => (
+                        <MiniCanvas key={sketch[0].x + sketch[0].y} sketch={sketch}
+                            onClick={() => handleMiniCanvasClick(sketch[0].x, sketch[0].y)} />)
+                    )
+                }
+            </StyledMiniCanvasContainer>
             <StyledCanvasContainer>
                 <canvas style={mainCanvasStyles} ref={canvasRef} width={canvasSize.width} height={canvasSize.height} />
                 <canvas onClick={e => handleClickOnDraft(e.nativeEvent)} onMouseMove={e => handleMoveOnDraft(e.nativeEvent)}
                    style={draftCanvasStyle(color)} ref={draftCanvasRef} width={canvasSize.width} height={canvasSize.height} />
-                </StyledCanvasContainer>
-        </div>
+            </StyledCanvasContainer>
+        </StyledCanvasAndMiniCanvasContainer>
         <StyledCanvasController>
         <StrokeSelector />
         <StrokeColorSelector />
             <CanvasColor />
             <button onClick={handleClearAllCanvas}>Clear Canvas</button>
         </StyledCanvasController>
-    </div>
+    </StyledContainer>
 }
+
+const StyledMiniCanvasContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 100px;
+    max-height: 80vh;
+    overflow-y: auto;
+`
+
+const StyledContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+`
+
+const StyledCanvasAndMiniCanvasContainer = styled.div`
+    display: flex;
+    gap: 12px;
+`
 
 const mainCanvasStyles:CSSProperties = {
     backgroundColor: 'transparent',
-    marginBottom: 24,
     pointerEvents: 'none',
     position: 'absolute'
 }
 
-const draftCanvasStyle = (color: string):CSSProperties => ({ backgroundColor: color, marginBottom: 24 })
+const draftCanvasStyle = (color: string):CSSProperties => ({ backgroundColor: color })
 
 const StyledCanvasController = styled.div`
     display: flex;
@@ -155,5 +186,5 @@ const StyledCanvasController = styled.div`
 `
 
 const StyledCanvasContainer = styled.div`
-    position: relative
+    position: relative;
 `

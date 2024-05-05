@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Coordinate } from "../components/Canvas"
 
-export function MiniCanvas({sketch}: {sketch: Coordinate[]}) {
+export function MiniCanvas({ sketch, onClick }: { sketch: Coordinate[];  onClick: ()=> void}) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [isFirstRender, setIsFirstRender] = useState(true)
 
@@ -33,5 +33,5 @@ export function MiniCanvas({sketch}: {sketch: Coordinate[]}) {
             startDraw()
     }, [isFirstRender, startDraw])
 
-    return <canvas width={100} height={50} ref={canvasRef} style={{border: '1px black solid'}} />
+    return <canvas width={100} height={50} ref={canvasRef} style={{ border: '1px black solid' }} onClick={onClick} />
 }
