@@ -17,3 +17,25 @@ input[type="color"] {
   width: 30px;
   height: 30px;
 }
+
+.mini-canvas {
+  position: relative;
+  cursor: pointer;
+}
+
+.mini-canvas-before {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: flex-end;
+  color: darkgray;
+  padding-left: 8px;
+  padding-bottom: 4px;
+  opacity: 0;
+}
+
+.mini-canvas:hover .mini-canvas-before {
+  opacity: 1;
+}

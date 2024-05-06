@@ -4,7 +4,7 @@ import { Coordinate } from "../components/Canvas"
 export function MiniCanvas({ sketch, onClick }: { sketch: Coordinate[];  onClick: ()=> void}) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [isFirstRender, setIsFirstRender] = useState(true)
-
+    const [isHovered, setIsHovered] = useState(false)
     // all magic numbers for now
     const draw = useCallback((ctx: CanvasRenderingContext2D, { x, y, strokeColor, strokeSize }: Coordinate) => {
             ctx.lineTo(x * 0.05, y * 0.05);
@@ -33,5 +33,16 @@ export function MiniCanvas({ sketch, onClick }: { sketch: Coordinate[];  onClick
             startDraw()
     }, [isFirstRender, startDraw])
 
-    return <canvas width={100} height={50} ref={canvasRef} style={{ border: '1px darkgray solid' }} onClick={onClick} />
+    return (
+        <div className={'mini-canvas'} onClick={onClick} onMouseOver={() => setIsHovered(true)}
+        onMouseLeave={()=> setIsHovered(false)} >
+            <canvas
+                width={110}
+                height={50}
+                ref={canvasRef}
+                style={{ border: `1px ${isHovered ? 'lightblue': 'darkgray'} solid`, cursor: 'pointer', opacity: isHovered ? 0.8: 1, position: 'relative' }}
+            />
+            <p className="mini-canvas-before" >Click to delete</p>
+        </div>
+    )
 }
