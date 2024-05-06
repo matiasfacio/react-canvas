@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Coordinate } from "../components/Canvas"
+import { FiTrash2 } from "react-icons/fi";
 
 export function MiniCanvas({ sketch, onClick }: { sketch: Coordinate[];  onClick: ()=> void}) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -34,15 +35,15 @@ export function MiniCanvas({ sketch, onClick }: { sketch: Coordinate[];  onClick
     }, [isFirstRender, startDraw])
 
     return (
-        <div className={'mini-canvas'} onClick={onClick} onMouseOver={() => setIsHovered(true)}
+        <div className={'mini-canvas'} onMouseOver={() => setIsHovered(true)}
         onMouseLeave={()=> setIsHovered(false)} >
             <canvas
                 width={110}
                 height={50}
                 ref={canvasRef}
-                style={{ border: `1px ${isHovered ? 'lightblue': 'darkgray'} solid`, cursor: 'pointer', opacity: isHovered ? 0.8: 1, position: 'relative' }}
+                style={{ border: "1px darkgray solid", cursor: 'pointer', opacity: isHovered ? 0.8: 1, position: 'relative' }}
             />
-            <p className="mini-canvas-before" >Click to delete</p>
+            <FiTrash2 className="mini-canvas-before" size={20} onClick={onClick}/>
         </div>
     )
 }
