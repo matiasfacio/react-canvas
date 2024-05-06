@@ -30,15 +30,17 @@ export const Canvas = () => {
         setPreviousPoint(undefined)
     }
 
-    const handleClearAllCanvas = () => {
+    const handleClearAllCanvas = ({keepCache}:{keepCache?: boolean}) => {
         const d = draftCanvasRef.current!.getContext('2d');
         const c = canvasRef.current!.getContext('2d')
         c?.clearRect(0, 0, draftCanvasRef.current!.width, draftCanvasRef.current!.height)
         c?.reset();
         d?.clearRect(0, 0, draftCanvasRef.current!.width, draftCanvasRef.current!.height)
         d?.reset();
-        setHandFreePathCache([])
-        setPreviousPoint(undefined)
+        if (!keepCache) {
+            setHandFreePathCache([])
+            setPreviousPoint(undefined)
+        }
     }
 
     // this is our drawing function
@@ -71,7 +73,8 @@ export const Canvas = () => {
         }
     }, [drawMainSingle, handFreePathCache])
 
-    useEffect(()=> {
+    useEffect(() => {
+        handleClearAllCanvas({keepCache: true});
         drawMainComplete()
     }, [drawMainComplete, handFreePathCache])
 
@@ -146,7 +149,7 @@ export const Canvas = () => {
         <StrokeSelector />
         <StrokeColorSelector />
             <CanvasColor />
-            <button onClick={handleClearAllCanvas}>Clear Canvas</button>
+            <button onClick={()=> handleClearAllCanvas({keepCache: false})}>Clear Canvas</button>
         </StyledCanvasController>
     </StyledContainer>
 }
