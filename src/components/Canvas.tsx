@@ -6,6 +6,8 @@ import { useCanvasConfig } from "../hooks/useCanvasConfig"
 import { MiniCanvas } from "../hooks/MiniCanvas"
 import { useHandFree } from "../hooks/useHandFree"
 import { Form } from "../App"
+import { useCircle } from "../hooks/useCircle"
+import { useSquare } from "../hooks/useSquare"
 
 export type Coordinate = {
     x: number;
@@ -20,43 +22,6 @@ export type CoordinateCircle = Coordinate & {radio: number}
 type Props = {
     activeForm: Form
 }
-
-const useSquare = () => {
-    const [squareCenter, setSquareCenter] = useState<Coordinate>();
-    const [squarePath, setSquarePath] = useState<Coordinate[]>([])
-    return {
-        squareCenter,
-        setSquareCenter,
-        drawSquare: () => null,
-        setSquarePath,
-        squarePath,
-    }
-}
-
-const useCircle = () => {
-    const [circleCenter, setCircleCenter] = useState<Coordinate>();
-    const [circlePath, setCirclePath] = useState<Coordinate>()
-
-    const drawCircle = (ctx: CanvasRenderingContext2D) => {
-        if (!circlePath || !circleCenter) return
-        const radio = Math.abs(circlePath.x - circleCenter.x);
-        ctx.reset()
-        ctx.beginPath();
-        ctx.arc(circleCenter.x, circleCenter.y, radio, 0, Math.PI * 2, true)
-        ctx.strokeStyle = 'lightgray';
-        ctx.lineWidth = circlePath.strokeSize;
-        ctx.stroke()
-    }
-
-    return {
-        circleCenter,
-        setCircleCenter,
-        drawCircle,
-        setCirclePath,
-        circlePath,
-    }
-}
-
 
 export const Canvas = ({ activeForm }: Props) => {
     const {color, CanvasColor} = useCanvasConfig()
