@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { FiArrowRightCircle, FiArrowLeftCircle } from "react-icons/fi";
 
 export const Expandable = ({ children }: { children: ReactNode }) => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(true)
     return <StyledButton $isOpen={isOpen}>
         {isOpen ? <FiArrowLeftCircle size={30} onClick={() => setIsOpen(!isOpen)} /> : <FiArrowRightCircle size={30} onClick={() => setIsOpen(!isOpen)} />}
         {isOpen && children}

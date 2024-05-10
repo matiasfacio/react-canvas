@@ -15,7 +15,7 @@ export type Coordinate = {
     type: Form;
 }
 
-type CoordinateCircle = Coordinate & {radio: number}
+export type CoordinateCircle = Coordinate & {radio: number}
 
 type Props = {
     activeForm: Form
