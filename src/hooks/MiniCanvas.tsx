@@ -14,7 +14,7 @@ export function MiniCanvas({ sketch, onClick }: { sketch: Coordinate[];  onClick
             ctx.stroke();
         }, [])
 
-        const startDraw = useCallback(() => {
+    const startDraw = useCallback(() => {
             if (!canvasRef.current) return;
             const context = canvasRef.current.getContext('2d')
             if (!context) return;
@@ -24,14 +24,14 @@ export function MiniCanvas({ sketch, onClick }: { sketch: Coordinate[];  onClick
                 draw(context, coord)
             }
             context.closePath();
-        }, [draw, sketch])
+    }, [draw, sketch])
 
     useEffect(() => {
         if (isFirstRender) {
             setIsFirstRender(false)
             return
-            }
-            startDraw()
+        }
+        startDraw()
     }, [isFirstRender, startDraw])
 
     return (

@@ -4,33 +4,80 @@ import { useStrokeSize } from "../hooks/useStrokeSize"
 import styled from "styled-components"
 import { useCanvasConfig } from "../hooks/useCanvasConfig"
 import { MiniCanvas } from "../hooks/MiniCanvas"
+import { useHandFree } from "../hooks/useHandFree"
+import { Form } from "../App"
 
 export type Coordinate = {
     x: number;
     y: number;
     strokeSize: number;
     strokeColor: string;
+    type: Form;
 }
 
-export const Canvas = () => {
+type CoordinateCircle = Coordinate & {radio: number}
+
+type Props = {
+    activeForm: Form
+}
+
+const useSquare = () => {
+    const [squareCenter, setSquareCenter] = useState<Coordinate>();
+    const [squarePath, setSquarePath] = useState<Coordinate[]>([])
+    return {
+        squareCenter,
+        setSquareCenter,
+        drawSquare: () => null,
+        setSquarePath,
+        squarePath,
+    }
+}
+
+const useCircle = () => {
+    const [circleCenter, setCircleCenter] = useState<Coordinate>();
+    const [circlePath, setCirclePath] = useState<Coordinate>()
+
+    const drawCircle = (ctx: CanvasRenderingContext2D) => {
+        if (!circlePath || !circleCenter) return
+        const radio = Math.abs(circlePath.x - circleCenter.x);
+        ctx.reset()
+        ctx.beginPath();
+        ctx.arc(circleCenter.x, circleCenter.y, radio, 0, Math.PI * 2, true)
+        ctx.strokeStyle = 'lightgray';
+        ctx.lineWidth = circlePath.strokeSize;
+        ctx.stroke()
+    }
+
+    return {
+        circleCenter,
+        setCircleCenter,
+        drawCircle,
+        setCirclePath,
+        circlePath,
+    }
+}
+
+
+export const Canvas = ({ activeForm }: Props) => {
     const {color, CanvasColor} = useCanvasConfig()
     const canvasSize = useCanvasResize()
     const draftCanvasRef = useRef<HTMLCanvasElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const {strokeSize, strokeColor, StrokeSelector, StrokeColorSelector} = useStrokeSize()
-    const [previousPoint, setPreviousPoint] = useState<Coordinate>()
-    const [handFreePath, setHandFreePath] = useState<Coordinate[]>([])
-    const [handFreePathCache, setHandFreePathCache] = useState<Coordinate[][]>([])
+    const [cache, setCache] = useState<Array<Coordinate[] | CoordinateCircle[]>>([])
+    const {previousPoint, setPreviousPoint, path, setPath, draw} = useHandFree()
+    const {drawSquare, setSquareCenter, setSquarePath, squareCenter, squarePath} = useSquare()
+    const {drawCircle, setCircleCenter, setCirclePath, circleCenter, circlePath} = useCircle()
 
     // we need to clear the draft canvas after a form was drew on it
-    const handleClearDraftCanvas = () => {
+    const handleClearDraftCanvas = useCallback(() => {
         const c = draftCanvasRef.current!.getContext('2d');
         c?.clearRect(0, 0, draftCanvasRef.current!.width, draftCanvasRef.current!.height)
         c?.reset();
         setPreviousPoint(undefined)
-    }
+    },[setPreviousPoint])
 
-    const handleClearAllCanvas = ({keepCache}:{keepCache?: boolean}) => {
+    const handleClearAllCanvas = useCallback(({keepCache}:{keepCache?: boolean}) => {
         const d = draftCanvasRef.current!.getContext('2d');
         const c = canvasRef.current!.getContext('2d')
         c?.clearRect(0, 0, draftCanvasRef.current!.width, draftCanvasRef.current!.height)
@@ -38,18 +85,10 @@ export const Canvas = () => {
         d?.clearRect(0, 0, draftCanvasRef.current!.width, draftCanvasRef.current!.height)
         d?.reset();
         if (!keepCache) {
-            setHandFreePathCache([])
+            setCache([])
             setPreviousPoint(undefined)
         }
-    }
-
-    // this is our drawing function
-    const draw = useCallback((ctx:CanvasRenderingContext2D, {x, y, strokeColor, strokeSize}:Coordinate) => {
-        ctx.lineTo(x, y);
-        ctx.lineWidth = strokeSize;
-        ctx.strokeStyle = strokeColor;
-        ctx.stroke();
-    }, [])
+    },[setPreviousPoint])
 
     // we need to draw every single form
     const drawMainSingle = useCallback((c: CanvasRenderingContext2D, sketch: Coordinate[]) => {
@@ -59,40 +98,52 @@ export const Canvas = () => {
             draw(c, coord)
         }
         c.closePath();
-        setHandFreePath([])
+        setPath(()=> ([]))
         handleClearDraftCanvas()
-    }, [draw])
+    }, [draw, handleClearDraftCanvas, setPath])
+
+    const drawMainCircle = useCallback((ctx: CanvasRenderingContext2D, sketch: CoordinateCircle[]) => {
+        const radio = sketch[0].radio;
+        ctx.beginPath();
+        ctx.arc(sketch[0]?.x, sketch[0].y, radio, 0, Math.PI * 2, true)
+        ctx.strokeStyle = sketch[0].strokeColor;
+        ctx.lineWidth = sketch[0].strokeSize;
+        ctx.stroke()
+        setCircleCenter(undefined)
+        setCirclePath(undefined)
+    }, [setCircleCenter, setCirclePath])
 
     // here we trigger a re drawing of the main canvas
     const drawMainComplete = useCallback(() => {
         if (canvasRef.current === null) return
         const c = canvasRef.current.getContext('2d')
         if (!c) return;
-        for (const sketch of handFreePathCache) {
-            drawMainSingle(c, sketch)
+        for (const sketch of cache) {
+            if (sketch[0].type === 'handfree') drawMainSingle(c, sketch as Coordinate[])
+            if (sketch[0].type === 'circle') drawMainCircle(c, sketch as CoordinateCircle[])
         }
-    }, [drawMainSingle, handFreePathCache])
+    }, [cache, drawMainSingle, drawMainCircle])
 
     useEffect(() => {
         handleClearAllCanvas({keepCache: true});
         drawMainComplete()
-    }, [drawMainComplete, handFreePathCache])
+    }, [drawMainComplete, cache, handleClearAllCanvas])
 
-    const handleClickOnDraft = useCallback((e: MouseEvent) => {
+    const handleFreeHandClickOnDraft = useCallback((e: MouseEvent) => {
         // we check if it is the first click - the one that initialize drawing
         if (!previousPoint) {
-            setPreviousPoint({ x: e.offsetX, y: e.offsetY, strokeSize, strokeColor })
-            setHandFreePath(prev => [...prev, {x: e.offsetX, y: e.offsetY, strokeSize, strokeColor}])
+            setPreviousPoint({ x: e.offsetX, y: e.offsetY, strokeSize, strokeColor, type: 'handfree' })
+            setPath(prev => [...prev, {x: e.offsetX, y: e.offsetY, strokeSize, strokeColor, type: 'handfree' }])
             return;
         }
         // on second click we add the path to the cache, reset the first point,
-        setHandFreePathCache(prev => [...prev, handFreePath])
+        setCache(prev => [...prev, path])
         setPreviousPoint(undefined)
         drawMainComplete() // and draw the whole main canvas again
-    }, [drawMainComplete, handFreePath, previousPoint, strokeColor, strokeSize]);
+    }, [drawMainComplete, path, previousPoint, setPath, setPreviousPoint, strokeColor, strokeSize]);
 
     // here we draw the grayish lines on the draft canvas
-    const  handleMoveOnDraft = (e: MouseEvent) => {
+    const handleFreeHandMoveOnDraft = (e: MouseEvent) => {
         if (!previousPoint) return; // we only want to draw if there is a previous point - here we make sure that the user clicked already once
         const d = draftCanvasRef.current!.getContext('2d');
         if (!d) return;
@@ -100,15 +151,15 @@ export const Canvas = () => {
         d.lineCap = "round";
         const x = e.offsetX;
         const y = e.offsetY;
-        setHandFreePath(prev => [...prev, {x: e.offsetX, y: e.offsetY, strokeColor, strokeSize}])
+        setPath(prev => [...prev, {x: e.offsetX, y: e.offsetY, strokeColor, strokeSize, type: 'handfree' }])
         const px = previousPoint.x;
         const py = previousPoint.y;
         d.beginPath()
         d.moveTo(px!, py!);
         d.setLineDash([5, 55]);
-        draw(d, {x,y, strokeColor: 'lightgray', strokeSize})
+        draw(d, {x,y, strokeColor: 'lightgray', strokeSize, type: 'handfree' })
         d.closePath();
-        setPreviousPoint({ x, y, strokeColor, strokeSize })
+        setPreviousPoint({ x, y, strokeColor, strokeSize, type: 'handfree'  })
     }
 
     // we want to track when the user presses 'Escape' to cancel a draft
@@ -117,41 +168,84 @@ export const Canvas = () => {
             if (e.key === 'Escape') {
                 handleClearDraftCanvas();
                 setPreviousPoint(undefined);
-                setHandFreePath([])
+                setPath(() => ([]))
             }
         }
         window.addEventListener('keydown', handleCancel)
         return ()=> window.removeEventListener('keydown', handleCancel)
-    }, [])
+    }, [handleClearDraftCanvas, setPath, setPreviousPoint])
 
     const handleMiniCanvasClick = (x: number, y: number) => {
-        const copy = handFreePathCache.filter((t) => t[0].x !== x && t[0].y !== y )
-        setHandFreePathCache(copy)
+        const copy = cache.filter((t) => t[0].x !== x && t[0].y !== y )
+        setCache(copy)
     }
 
-    return <StyledContainer>
-        <StyledCanvasAndMiniCanvasContainer>
-            <StyledMiniCanvasContainer>
-                {
-                    handFreePathCache.map((sketch) => (
-                        <MiniCanvas key={sketch[0].x + sketch[0].y} sketch={sketch}
-                            onClick={() => handleMiniCanvasClick(sketch[0].x, sketch[0].y)} />)
-                    )
-                }
-            </StyledMiniCanvasContainer>
-            <StyledCanvasContainer>
-                <canvas style={mainCanvasStyles} ref={canvasRef} width={canvasSize.width} height={canvasSize.height} />
-                <canvas onClick={e => handleClickOnDraft(e.nativeEvent)} onMouseMove={e => handleMoveOnDraft(e.nativeEvent)}
-                   style={draftCanvasStyle(color)} ref={draftCanvasRef} width={canvasSize.width} height={canvasSize.height} />
-            </StyledCanvasContainer>
-        </StyledCanvasAndMiniCanvasContainer>
-        <StyledCanvasController>
-        <StrokeSelector />
-        <StrokeColorSelector />
-            <CanvasColor />
-            <button onClick={()=> handleClearAllCanvas({keepCache: false})}>Clear Canvas</button>
-        </StyledCanvasController>
-    </StyledContainer>
+    const handleCircleClickOnDraft = (e:MouseEvent) => {
+        if (!circleCenter) {
+            setCircleCenter({ x: e.offsetX, y: e.offsetY, strokeColor, strokeSize, type: 'circle'  })
+            return
+        }
+        if (!circlePath) return;
+        const radio = Math.abs(circlePath.x - circleCenter.x)
+        setCache(prev => [...prev, [{x: circleCenter.x, y:circleCenter.y, radio, type:'circle', strokeColor, strokeSize}]])
+    }
+
+    const handleCircleMoveOnDraft = (e: MouseEvent) => {
+        console.log(e);
+        setCirclePath({ x: e.offsetX, y: e.offsetY, strokeColor, strokeSize, type: 'circle'  })
+        drawCircle(draftCanvasRef.current!.getContext('2d')!)
+    }
+
+    const handleSquareClickOnDraft = (e:MouseEvent) => {
+        console.log(e);
+    }
+
+    const handleSquareMoveOnDraft = (e:MouseEvent) => {
+        console.log(e);
+    }
+
+    return (
+            <StyledContainer>
+                <StyledCanvasAndMiniCanvasContainer>
+                    <StyledMiniCanvasContainer>
+                        {
+                            cache?.map((sketch) => {
+                                if (!sketch) return;
+                                return <MiniCanvas key={sketch[0].x + sketch[0].y} sketch={sketch}
+                                    onClick={() => handleMiniCanvasClick(sketch[0].x, sketch[0].y)} />
+                            })
+                        }
+                    </StyledMiniCanvasContainer>
+                    <StyledCanvasContainer>
+                        <canvas style={mainCanvasStyles} ref={canvasRef} width={canvasSize.width} height={canvasSize.height} />
+                        <canvas
+                            onClick={e => activeForm === 'handfree'
+                                ? handleFreeHandClickOnDraft(e.nativeEvent)
+                                    : activeForm === 'circle'
+                                    ? handleCircleClickOnDraft(e.nativeEvent)
+                                : handleSquareClickOnDraft(e.nativeEvent)
+                            }
+                            onMouseMove={e => activeForm === 'handfree'
+                                ? handleFreeHandMoveOnDraft(e.nativeEvent)
+                                    : activeForm === 'circle'
+                                    ? handleCircleMoveOnDraft(e.nativeEvent)
+                                : handleSquareMoveOnDraft(e.nativeEvent)}
+                            style={draftCanvasStyle(color)}
+                            ref={draftCanvasRef}
+                            width={canvasSize.width}
+                            height={canvasSize.height}
+                        />
+                    </StyledCanvasContainer>
+                </StyledCanvasAndMiniCanvasContainer>
+                <StyledCanvasController>
+                <StrokeSelector />
+                <StrokeColorSelector />
+                    <CanvasColor />
+                    <button onClick={()=> handleClearAllCanvas({keepCache: false})}>Clear Canvas</button>
+                </StyledCanvasController>
+                {activeForm}
+        </StyledContainer>
+        )
 }
 
 const StyledMiniCanvasContainer = styled.div`

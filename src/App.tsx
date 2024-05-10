@@ -3,17 +3,25 @@ import './App.css'
 import { Canvas } from './components/Canvas'
 import { Expandable } from './components/Expandable'
 import { Menu } from './components/Menu'
+import { useState } from 'react'
+
+export type Form = 'circle' | 'square' | 'handfree'
 
 function App() {
+  const [activeForm, setActiveForm] = useState<Form>('handfree')
+  const handleClick = (form: Form) => {
+  setActiveForm(form)
+}
+
   return (
     <>
       <StyledCanvasContainer>
         <StyledMenuContainer>
           <Expandable>
-            <Menu/>
+            <Menu onClick={handleClick}/>
           </Expandable>
         </StyledMenuContainer>
-        <Canvas />
+        <Canvas activeForm={activeForm} />
       </StyledCanvasContainer>
     </>
   )

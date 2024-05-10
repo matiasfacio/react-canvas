@@ -1,10 +1,12 @@
 import styled from "styled-components"
+import { Form } from "../App"
 
-export const Menu = () => {
+export const Menu = ({ onClick }: {onClick: (arg: Form)=> void}) => {
     return (
         <ul>
-            <li><StyledMenuItem>Circle</StyledMenuItem></li>
-            <li><StyledMenuItem>Square</StyledMenuItem></li>
+            <li><StyledMenuItem onClick={()=> onClick('circle')}>Circle</StyledMenuItem></li>
+            <li><StyledMenuItem onClick={() => onClick('square')}>Square</StyledMenuItem></li>
+            <li><StyledMenuItem onClick={()=> onClick('handfree')}>Hand Free</StyledMenuItem></li>
         </ul>
     )
 }
