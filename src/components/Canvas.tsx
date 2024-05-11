@@ -51,9 +51,11 @@ export const Canvas = ({ activeForm }: Props) => {
         d?.reset();
         if (!keepCache) {
             setCache([])
+            setCircleCenter(undefined)
+            setCirclePath(undefined)
             setPreviousPoint(undefined)
         }
-    },[setPreviousPoint])
+    },[setCircleCenter, setCirclePath, setPreviousPoint])
 
     // we need to draw every single form
     const drawMainSingle = useCallback((c: CanvasRenderingContext2D, sketch: Coordinate[]) => {
@@ -134,11 +136,12 @@ export const Canvas = ({ activeForm }: Props) => {
                 handleClearDraftCanvas();
                 setPreviousPoint(undefined);
                 setPath(() => ([]))
+                setCircleCenter(undefined)
             }
         }
         window.addEventListener('keydown', handleCancel)
         return ()=> window.removeEventListener('keydown', handleCancel)
-    }, [handleClearDraftCanvas, setPath, setPreviousPoint])
+    }, [handleClearDraftCanvas, setCircleCenter, setPath, setPreviousPoint])
 
     const handleMiniCanvasClick = (x: number, y: number) => {
         const copy = cache.filter((t) => t[0].x !== x && t[0].y !== y )
