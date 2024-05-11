@@ -7,7 +7,7 @@ import { MiniCanvas } from "../hooks/MiniCanvas"
 import { useHandFree } from "../hooks/useHandFree"
 import { Form } from "../App"
 import { useCircle } from "../hooks/useCircle"
-import { useSquare } from "../hooks/useSquare"
+//import { useSquare } from "../hooks/useSquare"
 
 export type Coordinate = {
     x: number;
@@ -31,7 +31,7 @@ export const Canvas = ({ activeForm }: Props) => {
     const {strokeSize, strokeColor, StrokeSelector, StrokeColorSelector} = useStrokeSize()
     const [cache, setCache] = useState<Array<Coordinate[] | CoordinateCircle[]>>([])
     const {previousPoint, setPreviousPoint, path, setPath, draw} = useHandFree()
-    const {drawSquare, setSquareCenter, setSquarePath, squareCenter, squarePath} = useSquare()
+    //const {drawSquare, setSquareCenter, setSquarePath, squareCenter, squarePath} = useSquare()
     const {drawCircle, setCircleCenter, setCirclePath, circleCenter, circlePath} = useCircle()
 
     // we need to clear the draft canvas after a form was drew on it
