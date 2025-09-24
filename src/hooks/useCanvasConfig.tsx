@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 export const useCanvasConfig = () => {
-    const [color, setCanvasColor] = useState('#ededed')
+    const [color, setCanvasColor] = useState('#ffffff')
     const CanvasColor = () => {
         return <label>
             Canvas color:
