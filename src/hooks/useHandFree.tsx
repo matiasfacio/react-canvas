@@ -7,12 +7,12 @@ export const useHandFree = () => {
     const [path, setPath] = useState<Coordinate[]>([])
     const { strokeSize, strokeColor} = useStrokeSize()
 
-    const draw = useCallback((ctx:CanvasRenderingContext2D, {x, y, strokeColor, strokeSize}:Coordinate) => {
+    const draw = (ctx:CanvasRenderingContext2D, {x, y, strokeColor, strokeSize}:Coordinate) => {
         ctx.lineTo(x, y);
         ctx.lineWidth = strokeSize;
         ctx.strokeStyle = strokeColor;
         ctx.stroke();
-    }, [])
+    }
 
     const handleMoveOnDraft = (d: CanvasRenderingContext2D | null, e: MouseEvent) => {
         if (!previousPoint || !d) return; // we only want to draw if there is a previous point - here we make sure that the user clicked already once
@@ -46,7 +46,6 @@ export const useHandFree = () => {
         handleClickOnDraft,
         handleMoveOnDraft,
         draw,
-        clearDraftCache: () => setPath([]),
         path,
         setPath,
         setPreviousPoint,

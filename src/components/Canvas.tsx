@@ -32,9 +32,11 @@ export const Canvas = ({activeForm}: Props) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const {strokeSize, strokeColor, StrokeSelector, StrokeColorSelector} = useStrokeSize()
     const [cache, setCache] = useState<Array<Coordinate[] | CoordinateCircle[]>>([])
-    const {previousPoint, setPreviousPoint, path, setPath, draw} = useHandFree()
+    const {previousPoint, setPreviousPoint, path, setPath, draw, handleMoveOnDraft} = useHandFree()
     const {drawSquare, setSquareCorner, setSquarePath, squareCorner, squarePath} = useSquare()
     const {drawCircle, setCircleCenter, setCirclePath, circleCenter, circlePath} = useCircle()
+
+    const draftContext = draftCanvasRef.current?.getContext('2d')
 
     // we need to clear the draft canvas after a form was drawn on it
     const handleClearDraftCanvas = useCallback(() => {
@@ -106,7 +108,6 @@ export const Canvas = ({activeForm}: Props) => {
         const c = canvasRef.current.getContext('2d')
         if (!c) return;
         for (const sketch of cache) {
-            console.log(sketch)
             if (sketch[0].type === 'handfree') drawMainFreeHand(c, sketch as Coordinate[])
             if (sketch[0].type === 'circle') drawMainCircle(c, sketch as CoordinateCircle[])
             if (sketch[0].type === 'square') drawMainSquare(c, sketch as CoordinateSquare[])
@@ -115,26 +116,13 @@ export const Canvas = ({activeForm}: Props) => {
     }, [cache, drawMainFreeHand, drawMainCircle, drawMainSquare])
 
 
-    const handleFreeHandClickOnDraft = useCallback((e: MouseEvent) => {
-        // we check if it is the first click - the one that initializes drawing
-        if (!previousPoint) {
-            setPreviousPoint({x: e.offsetX, y: e.offsetY, strokeSize, strokeColor, type: 'handfree'})
-            setPath(prev => [...prev, {x: e.offsetX, y: e.offsetY, strokeSize, strokeColor, type: 'handfree'}])
-            return;
-        }
-        // on the second click we add the path to the cache, reset the first point,
-        setCache(prev => [...prev, path])
-        setPath([])
-        setPreviousPoint(undefined)
-    }, [path, previousPoint, setPath, setPreviousPoint, strokeColor, strokeSize]);
-
     useEffect(()=>{
+        // when "cache" has changed, it means a form has been drawn and can be drawn in the main canvas
         if (cache) {
             handleClearAllCanvas({keepCache: true})
             drawMainComplete()
         }
     }, [cache, drawMainComplete, handleClearAllCanvas])
-
 
     // we want to track when the user presses 'Escape' to cancel a draft
     useEffect(() => {
@@ -157,6 +145,19 @@ export const Canvas = ({activeForm}: Props) => {
         setCache(copy)
     }
 
+    const handleFreeHandClickOnDraft = useCallback((e: MouseEvent) => {
+        // we check if it is the first click - the one that initializes drawing
+        if (!previousPoint) {
+            setPreviousPoint({x: e.offsetX, y: e.offsetY, strokeSize, strokeColor, type: 'handfree'})
+            setPath(prev => [...prev, {x: e.offsetX, y: e.offsetY, strokeSize, strokeColor, type: 'handfree'}])
+            return;
+        }
+        // on the second click we add the path to the cache, reset the first point,
+        setCache(prev => [...prev, path])
+        setPath([])
+        setPreviousPoint(undefined)
+    }, [path, previousPoint, setPath, setPreviousPoint, strokeColor, strokeSize]);
+
     const handleCircleClickOnDraft = (e: MouseEvent) => {
         if (!circleCenter) {
             setCircleCenter({x: e.offsetX, y: e.offsetY, strokeColor, strokeSize, type: 'circle'})
@@ -178,34 +179,19 @@ export const Canvas = ({activeForm}: Props) => {
 
     const handleFreeHandMoveOnDraft = (e: MouseEvent) => {
         // we only want to draw if there is a previous point - here we make sure that the user clicked already once
-        //  TODO refactor to extract the drawing into its own function as in handleCircleMoveOnDraft
-        if (!previousPoint) return;
-        const d = draftCanvasRef.current!.getContext('2d')!;
-        d.lineJoin = "round";
-        d.lineCap = "round";
-        const x = e.offsetX;
-        const y = e.offsetY;
-        setPath(prev => [...prev, {x: e.offsetX, y: e.offsetY, strokeColor, strokeSize, type: 'handfree'}])
-        const px = previousPoint.x;
-        const py = previousPoint.y;
-        d.beginPath()
-        d.moveTo(px!, py!);
-        d.setLineDash([5, 55]);
-        requestAnimationFrame(()=> draw(d, {x, y, strokeColor: 'lightgray', strokeSize, type: 'handfree'}))
-        d.closePath();
-        setPreviousPoint({x, y, strokeColor, strokeSize, type: 'handfree'})
+        handleMoveOnDraft(draftContext!, e)
     }
 
     const handleCircleMoveOnDraft = (e: MouseEvent) => {
         if (!circleCenter) return;
         setCirclePath({x: e.offsetX, y: e.offsetY, strokeColor, strokeSize, type: 'circle'})
-        requestAnimationFrame(()=>drawCircle(draftCanvasRef.current!.getContext('2d')!))
+        requestAnimationFrame(()=>drawCircle(draftContext!))
     }
 
     const handleSquareMoveOnDraft = (e: MouseEvent) => {
         if (!squareCorner) return
         setSquarePath({x: e.offsetX, y: e.offsetY, strokeSize, strokeColor})
-        requestAnimationFrame(()=> drawSquare(draftCanvasRef.current!.getContext('2d')!))
+        requestAnimationFrame(()=> drawSquare(draftContext!))
     }
 
     const handleSquareClickOnDraft = (e: MouseEvent) => {
@@ -233,8 +219,6 @@ export const Canvas = ({activeForm}: Props) => {
         setSquarePath(undefined)
         setSquareCorner(undefined)
     }
-
-
 
 
     return (

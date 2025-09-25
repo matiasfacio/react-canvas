@@ -5,9 +5,9 @@ export const useSquare = () => {
     const [squareCorner, setSquareCorner] = useState<Coordinate>();
     const [squarePath, setSquarePath] = useState<Coordinate>()
 
-    const handleSquarePath = (props?:{x: number, y: number, strokeSize: number, strokeColor: string})=> {
-        if (props) {
-            setSquarePath( {...props, type: 'square'})
+    const handleSquarePath = (args?:{x: number, y: number, strokeSize: number, strokeColor: string})=> {
+        if (args) {
+            setSquarePath( {...args, type: 'square'})
         } else {
             setSquarePath(undefined)
         }
